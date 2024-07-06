@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Iterable
 from typing import TYPE_CHECKING
 
-from beancount.core.data import iter_entry_dates
+from beancount.core.data import iter_entry_dates, Posting
 from beancount.core.inventory import Inventory
 from beancount.utils.encryption import is_encrypted_file
 
@@ -417,7 +417,7 @@ class FavaLedger:
         *,
         with_children: bool,
     ) -> Iterable[
-        tuple[Directive, SimpleCounterInventory, SimpleCounterInventory]
+        tuple[Directive, SimpleCounterInventory, SimpleCounterInventory, SimpleCounterInventory]
     ]:
         """Journal for an account.
 
@@ -429,7 +429,7 @@ class FavaLedger:
                            the account.
 
         Returns:
-            A generator of ``(entry, change, balance)`` tuples.
+            A generator of ``(entry, change, balance, cleared_balance)`` tuples.
         """
 
         def is_account(a: str) -> bool:
@@ -441,6 +441,7 @@ class FavaLedger:
 
         prices = self.prices
         balance = CounterInventory()
+        cleared_balance = CounterInventory()
         for entry in filtered.entries:
             change = CounterInventory()
             entry_is_relevant = False
@@ -450,6 +451,8 @@ class FavaLedger:
                     if relevant_account(posting.account):
                         entry_is_relevant = True
                         balance.add_position(posting)
+                        if not getattr(entry, 'flag') == '!' and not getattr(posting, 'flag') == '!':
+                            cleared_balance.add_position(posting)
                         change.add_position(posting)
             elif any(relevant_account(a) for a in get_entry_accounts(entry)):
                 entry_is_relevant = True
@@ -459,6 +462,7 @@ class FavaLedger:
                     entry,
                     cost_or_value(change, conversion, prices, entry.date),
                     cost_or_value(balance, conversion, prices, entry.date),
+                    cost_or_value(cleared_balance, conversion, prices, entry.date),
                 )
 
     def get_entry(self, entry_hash: str) -> Directive:

@@ -51,11 +51,12 @@
         <span class="num">{{ _('Units') }}</span>
         <span class="cost num">{{ _('Cost') }}{% if show_change_and_balance %} / {{ _('Change') }}{% endif %}</span>
         <span class="num">{{ _('Price') }}{% if show_change_and_balance %} / {{ _('Balance') }}{% endif %}</span>
+        <span class="num">{{ _('Cleared Price') }}{% if show_change_and_balance %} / {{ _('Cleared Balance') }}{% endif %}</span>
         </p>
     </li>
 {% for entry in entries %}
     {% if show_change_and_balance %}
-        {% set entry, change, balance = entry %}
+        {% set entry, change, balance, cleared_balance = entry %}
     {% endif %}
     {% set type = entry.__class__.__name__.lower() %}
     {% set metadata_items = entry.meta|meta_items %}
@@ -126,6 +127,9 @@
           {% endif %}
           <span class="num">
           {%- for currency, number in balance.items() %}{{ commodity_macros.render_num(ledger, currency, number) }}<br>{% endfor -%}
+          </span>
+          <span class="num">
+          {%- for currency, number in cleared_balance.items() %}{{ commodity_macros.render_num(ledger, currency, number) }}<br>{% endfor -%}
           </span>
         {% endif %}
         </p>
