@@ -1,4 +1,6 @@
+import { get, put } from "../api";
 import { delegate } from "../lib/events";
+import router from "../router";
 import { sortableJournal } from "../sort";
 import { fql_filter } from "../stores/filters";
 import { journalShow } from "../stores/journal";
@@ -68,6 +70,31 @@ function handleClick({ target }: MouseEvent): void {
   }
 }
 
+async function doToggleFlag(entry_hash: string): Promise<void> {
+  const { slice, sha256sum } = await get("context", { entry_hash })
+  const re = /(^\d{4}-\d{2}-\d{2}) ([!*])/;
+  const match = re.exec(slice);
+  if (match === null) {
+    return;
+  }
+  const [, date, flag] = match;
+  const newFlag = flag === "!" ? "*" : "!";
+  const newSlice = slice.replace(re, `${date} ${newFlag}`);
+  await put("source_slice", {
+    entry_hash,
+    source: newSlice,
+    sha256sum,
+  });
+  router.reload();
+}
+
+function toggleFlag({ target }: MouseEvent): void {
+  console.log((target as HTMLElement).dataset.entry);
+  doToggleFlag((target as HTMLElement).dataset.entry).then(() => {
+    console.log("done");
+  });
+}
+
 export class FavaJournal extends HTMLElement {
   component?: JournalFilters;
 
@@ -87,6 +114,7 @@ export class FavaJournal extends HTMLElement {
 
     sortableJournal(ol);
     delegate(this, "click", "li", handleClick);
+    delegate(this, "click", ".flag > *", toggleFlag);
   }
 
   disconnectedCallback(): void {
