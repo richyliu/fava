@@ -72,7 +72,8 @@ function handleClick({ target }: MouseEvent): void {
 
 async function doToggleFlag(entry_hash: string): Promise<void> {
   const { slice, sha256sum } = await get("context", { entry_hash })
-  const re = /(^\d{4}-\d{2}-\d{2}) ([!*])/;
+  // match date and flag (dates can be YYYY-MM-DD or YYYY/MM/DD)
+  const re = /(^\d{4}[-\/]\d{2}[-\/]\d{2}) ([!*])/;
   const match = re.exec(slice);
   if (match === null) {
     return;
@@ -89,10 +90,7 @@ async function doToggleFlag(entry_hash: string): Promise<void> {
 }
 
 function toggleFlag({ target }: MouseEvent): void {
-  console.log((target as HTMLElement).dataset.entry);
-  doToggleFlag((target as HTMLElement).dataset.entry).then(() => {
-    console.log("done");
-  });
+  doToggleFlag((target as HTMLElement).dataset.entry).then();
 }
 
 export class FavaJournal extends HTMLElement {
